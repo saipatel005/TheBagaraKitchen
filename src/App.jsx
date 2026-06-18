@@ -17,10 +17,44 @@ import AdminDashboard from './pages/AdminDashboard';
 import ManagerDashboard from './pages/ManagerDashboard';
 import Logo from './components/Logo';
 
-import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 
 const PublicView = ({ handleOpenBooking, handleCloseBooking, isBookingOpen, handleOrderClick }) => {
   const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    const path = location.pathname.toLowerCase().replace(/\/$/, "");
+    let targetId = '';
+    
+    if (path === '/about') targetId = '#about';
+    else if (path === '/menu') targetId = '#menu';
+    else if (path === '/banquet') targetId = '#banquet';
+    else if (path === '/pdr') targetId = '#pdr';
+    else if (path === '/gallery') targetId = '#gallery';
+    else if (path === '/contact') targetId = '#contact';
+    else if (path === '/' || path === '') targetId = '#home';
+
+    if (targetId) {
+      const timer = setTimeout(() => {
+        const element = document.querySelector(targetId);
+        if (element) {
+          const offsetTop = element.offsetTop - 80;
+          window.scrollTo({
+            top: offsetTop,
+            behavior: 'smooth'
+          });
+        } else if (targetId === '#home') {
+          window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+          });
+        }
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [location.pathname]);
+
   return (
     <div className="bg-[#00251e] text-[#e2e2e2] min-h-screen selection:bg-primary selection:text-white overflow-x-hidden antialiased">
       {/* Sticky Top Navigation */}
@@ -130,19 +164,24 @@ const AppContent = () => {
     );
   }
 
+  const publicRoutes = ["/", "/about", "/menu", "/banquet", "/pdr", "/gallery", "/contact"];
+
   return (
     <Routes>
-      <Route 
-        path="/" 
-        element={
-          <PublicView 
-            handleOpenBooking={handleOpenBooking} 
-            handleCloseBooking={handleCloseBooking} 
-            isBookingOpen={isBookingOpen} 
-            handleOrderClick={handleOrderClick} 
-          />
-        } 
-      />
+      {publicRoutes.map((path) => (
+        <Route 
+          key={path}
+          path={path} 
+          element={
+            <PublicView 
+              handleOpenBooking={handleOpenBooking} 
+              handleCloseBooking={handleCloseBooking} 
+              isBookingOpen={isBookingOpen} 
+              handleOrderClick={handleOrderClick} 
+            />
+          } 
+        />
+      ))}
       <Route path="/login" element={<LoginRoute />} />
       <Route path="/dashboard" element={<DashboardRoute />} />
       <Route path="*" element={<Navigate to="/" replace />} />

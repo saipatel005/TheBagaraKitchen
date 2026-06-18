@@ -3,11 +3,14 @@ import { Menu as MenuIcon, X, Calendar } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import Logo from './Logo';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const Navbar = ({ onBookClick, onLoginClick, onDashboardClick }) => {
   const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -23,24 +26,46 @@ const Navbar = ({ onBookClick, onLoginClick, onDashboardClick }) => {
   }, []);
 
   const navLinks = [
-    { name: 'Home', href: '#home' },
-    { name: 'About Us', href: '#about' },
-    { name: 'Menu', href: '#menu' },
-    { name: 'Banquet Hall', href: '#banquet' },
-    { name: 'Private Dining', href: '#pdr' },
-    { name: 'Contact', href: '#contact' },
+    { name: 'Home', path: '/' },
+    { name: 'About Us', path: '/about' },
+    { name: 'Menu', path: '/menu' },
+    { name: 'Banquet Hall', path: '/banquet' },
+    { name: 'Private Dining', path: '/pdr' },
+    { name: 'Contact', path: '/contact' },
   ];
 
-  const handleLinkClick = (e, href) => {
+  const handleLinkClick = (e, path) => {
     e.preventDefault();
     setIsOpen(false);
-    const element = document.querySelector(href);
-    if (element) {
-      const offsetTop = element.offsetTop - 80; // Adjust for sticky nav height
-      window.scrollTo({
-        top: offsetTop,
-        behavior: 'smooth'
-      });
+    
+    const currentPathNormalized = location.pathname.toLowerCase().replace(/\/$/, "");
+    const targetPathNormalized = path.toLowerCase().replace(/\/$/, "");
+
+    if (currentPathNormalized === targetPathNormalized) {
+      // Already on the path, scroll directly
+      let targetId = '#home';
+      if (path === '/about') targetId = '#about';
+      else if (path === '/menu') targetId = '#menu';
+      else if (path === '/banquet') targetId = '#banquet';
+      else if (path === '/pdr') targetId = '#pdr';
+      else if (path === '/gallery') targetId = '#gallery';
+      else if (path === '/contact') targetId = '#contact';
+
+      const element = document.querySelector(targetId);
+      if (element) {
+        const offsetTop = element.offsetTop - 80;
+        window.scrollTo({
+          top: offsetTop,
+          behavior: 'smooth'
+        });
+      } else if (targetId === '#home') {
+        window.scrollTo({
+          top: 0,
+          behavior: 'smooth'
+        });
+      }
+    } else {
+      navigate(path);
     }
   };
 
@@ -56,8 +81,8 @@ const Navbar = ({ onBookClick, onLoginClick, onDashboardClick }) => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 flex justify-between items-center gap-4 xl:gap-16">
           {/* Logo */}
           <a 
-            href="#home" 
-            onClick={(e) => handleLinkClick(e, '#home')}
+            href="/" 
+            onClick={(e) => handleLinkClick(e, '/')}
             className="flex items-center gap-2 sm:gap-3 font-headline font-bold text-primary tracking-wide transition-all duration-300 hover:brightness-110 active:scale-95"
           >
             <Logo className="w-14 h-14 min-[360px]:w-16 min-[360px]:h-16 sm:w-24 sm:h-24 md:w-32 md:h-32 flex-shrink-0" />
@@ -76,8 +101,8 @@ const Navbar = ({ onBookClick, onLoginClick, onDashboardClick }) => {
             {navLinks.map((link) => (
               <a
                 key={link.name}
-                href={link.href}
-                onClick={(e) => handleLinkClick(e, link.href)}
+                href={link.path}
+                onClick={(e) => handleLinkClick(e, link.path)}
                 className="text-on-surface-variant hover:text-primary font-medium text-[10px] lg:text-[12px] xl:text-sm tracking-wide transition-colors duration-300 relative group py-1 whitespace-nowrap"
               >
                 {link.name}
@@ -88,7 +113,7 @@ const Navbar = ({ onBookClick, onLoginClick, onDashboardClick }) => {
             {/* Dashboard Redirect or Login trigger */}
             {user ? (
               <a
-                href="#dashboard"
+                href="/dashboard"
                 onClick={(e) => { e.preventDefault(); setIsOpen(false); onDashboardClick(); }}
                 className="text-primary hover:brightness-115 font-semibold text-[10px] lg:text-[12px] xl:text-sm tracking-wide transition-all relative group py-1 uppercase whitespace-nowrap"
               >
@@ -97,7 +122,7 @@ const Navbar = ({ onBookClick, onLoginClick, onDashboardClick }) => {
               </a>
             ) : (
               <a
-                href="#login"
+                href="/login"
                 onClick={(e) => { e.preventDefault(); setIsOpen(false); onLoginClick(); }}
                 className="text-on-surface-variant hover:text-primary font-medium text-[10px] lg:text-[12px] xl:text-sm tracking-wide transition-colors duration-300 relative group py-1 whitespace-nowrap"
               >
@@ -151,8 +176,8 @@ const Navbar = ({ onBookClick, onLoginClick, onDashboardClick }) => {
                 {navLinks.map((link) => (
                   <a
                     key={link.name}
-                    href={link.href}
-                    onClick={(e) => handleLinkClick(e, link.href)}
+                    href={link.path}
+                    onClick={(e) => handleLinkClick(e, link.path)}
                     className="text-lg text-on-surface-variant hover:text-primary font-medium tracking-wide py-2 border-b border-outline-variant/10 transition-colors"
                   >
                     {link.name}
@@ -160,7 +185,7 @@ const Navbar = ({ onBookClick, onLoginClick, onDashboardClick }) => {
                 ))}
                 {user ? (
                   <a
-                    href="#dashboard"
+                    href="/dashboard"
                     onClick={(e) => { e.preventDefault(); setIsOpen(false); onDashboardClick(); }}
                     className="text-lg text-primary font-bold tracking-wide py-2 border-b border-outline-variant/10"
                   >
@@ -168,7 +193,7 @@ const Navbar = ({ onBookClick, onLoginClick, onDashboardClick }) => {
                   </a>
                 ) : (
                   <a
-                    href="#login"
+                    href="/login"
                     onClick={(e) => { e.preventDefault(); setIsOpen(false); onLoginClick(); }}
                     className="text-lg text-on-surface-variant hover:text-primary font-medium tracking-wide py-2 border-b border-outline-variant/10 transition-colors"
                   >
