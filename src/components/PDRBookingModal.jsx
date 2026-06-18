@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Calendar, Users, Star, CheckCircle, ArrowRight, ArrowLeft, Loader2 } from 'lucide-react';
+import { X, Calendar, Users, Star, CheckCircle, ArrowRight, ArrowLeft, Loader2, DoorOpen } from 'lucide-react';
 import { useData } from '../context/DataContext';
-import BanquetDatePicker from './BanquetDatePicker';
+import PDRDatePicker from './PDRDatePicker';
 
 const motionFramer = motion;
 
-const BookingModal = ({ isOpen, onClose }) => {
-  const { addBooking, bookings, advanceAmount } = useData();
+const PDRBookingModal = ({ isOpen, onClose }) => {
+  const { addPdrBooking, pdrBookings, pdrSettings, pdrPaymentEnabled } = useData();
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -26,12 +26,20 @@ const BookingModal = ({ isOpen, onClose }) => {
     email: '',
     phone: '',
     date: '',
-    guests: '100',
-    eventType: 'Corporate Gathering',
+    guests: '15',
+    room: 'Room 1',
+    eventType: 'Private Gathering',
     catering: 'Veg Silver',
     notes: '',
     session: 'Lunch: 10:30 AM - 03:30 PM'
   });
+
+  const getAdvanceAmount = () => {
+    if (formData.room === 'Room 1') return pdrSettings?.room1?.price || '5000';
+    return pdrSettings?.room2?.price || '8000';
+  };
+  
+  const advanceAmount = getAdvanceAmount();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -42,20 +50,28 @@ const BookingModal = ({ isOpen, onClose }) => {
     e.preventDefault();
     if (step === 1) {
       if (!formData.date) {
-        alert("Please select a date for your event.");
+        alert("Please select a date for your reservation.");
         return;
       }
       if (formData.date < todayString) {
-        alert("Action Blocked: You cannot book a banquet hall for a past date.");
+        alert("Action Blocked: You cannot book a PDR for a past date.");
         return;
       }
-      const hasConflict = bookings.some(
+      const hasConflict = pdrBookings.some(
         (b) => b.date === formData.date &&
           b.status === 'Approved' &&
+          (b.room || 'Room 1') === formData.room &&
           (b.session || 'Lunch: 10:30 AM - 03:30 PM').substring(0, 5) === formData.session.substring(0, 5)
       );
       if (hasConflict) {
-        alert(`We apologize, but this date is already reserved for another banquet event during the ${formData.session.substring(0, 5)} session. Please choose another date or session.`);
+        alert(`We apologize, but ${formData.room} is already reserved during the ${formData.session.substring(0, 5)} session. Please choose another date, session, or room.`);
+        return;
+      }
+      
+      // Guest validation against room capacity
+      const maxGuests = parseInt(formData.room === 'Room 1' ? pdrSettings?.room1?.capacity : pdrSettings?.room2?.capacity) || 20;
+      if (parseInt(formData.guests) > maxGuests) {
+        alert(`Action Blocked: ${formData.room} has a maximum capacity of ${maxGuests} guests. Please reduce the guest count or choose the other room if available.`);
         return;
       }
     }
@@ -85,16 +101,15 @@ const BookingModal = ({ isOpen, onClose }) => {
     setPaymentInfo(paymentData);
     const finalData = { ...formData, ...paymentData };
 
-    // Store banquet booking request in dynamic context
     setTimeout(async () => {
       try {
-        await addBooking(finalData);
+        await addPdrBooking(finalData);
 
-        // Send booking alerts (Admin details & Guest receipt confirmation) via secure server SMTP
+        // Send booking alerts
         await fetch('/api/send-email', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ type: 'new_booking', data: finalData })
+          body: JSON.stringify({ type: 'new_booking', data: { ...finalData, bookingType: 'PDR' } })
         });
       } catch (err) {
         console.error('Failed to dispatch booking emails:', err);
@@ -113,7 +128,6 @@ const BookingModal = ({ isOpen, onClose }) => {
 
     try {
       setIsSubmitting(true);
-      // Create order via our backend
       const res = await fetch('/api/create-razorpay-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -132,9 +146,9 @@ const BookingModal = ({ isOpen, onClose }) => {
         amount: Number(advanceAmount) * 100, 
         currency: "INR",
         name: "The Bagara Kitchen",
-        description: "Banquet Advance Payment",
+        description: `PDR Advance Payment - ${formData.room}`,
         image: "https://the-bagara-kitchen.vercel.app/logo.jpg",
-        order_id: data.order.id, // Use the dynamically generated order ID
+        order_id: data.order.id,
         handler: function (response) {
           const paymentData = {
             paidAdvance: true,
@@ -176,16 +190,17 @@ const BookingModal = ({ isOpen, onClose }) => {
     if (e) e.preventDefault();
 
     if (formData.date < todayString) {
-      alert("Action Blocked: You cannot book a banquet hall for a past date.");
+      alert("Action Blocked: You cannot book a PDR for a past date.");
       return;
     }
-    const hasConflict = bookings.some(
+    const hasConflict = pdrBookings.some(
       (b) => b.date === formData.date &&
         b.status === 'Approved' &&
+        (b.room || 'Room 1') === formData.room &&
         (b.session || 'Lunch: 10:30 AM - 03:30 PM').substring(0, 5) === formData.session.substring(0, 5)
     );
     if (hasConflict) {
-      alert(`We apologize, but this date is already reserved for another banquet event during the ${formData.session.substring(0, 5)} session. Please choose another date or session.`);
+      alert(`We apologize, but ${formData.room} is already reserved during the ${formData.session.substring(0, 5)} session. Please choose another date, session, or room.`);
       return;
     }
 
@@ -194,13 +209,8 @@ const BookingModal = ({ isOpen, onClose }) => {
       alert("Action Blocked: Please enter a valid phone number containing only numbers, spaces, dashes, or international prefix (+).");
       return;
     }
-    const digitCount = formData.phone.replace(/\D/g, '').length;
-    if (digitCount < 10 || digitCount > 13) {
-      alert("Action Blocked: Phone number must contain between 10 and 13 digits (e.g. 9876543210 or +91 98765 43210).");
-      return;
-    }
 
-    if (!bypassPayment && advanceAmount && Number(advanceAmount) > 0) {
+    if (!bypassPayment && pdrPaymentEnabled && advanceAmount && Number(advanceAmount) > 0) {
       handleRazorpayPayment();
     } else {
       processSubmission({ paidAdvance: false });
@@ -240,10 +250,10 @@ const BookingModal = ({ isOpen, onClose }) => {
           {/* Heading */}
           <div className="p-6 bg-surface-low border-b border-outline-variant/20">
             <h3 className="font-headline text-2xl text-primary font-bold">
-              Reserve Our Banquet Hall
+              Reserve Private Dining
             </h3>
             <p className="text-xs text-on-surface-variant/80 font-light mt-1">
-              Host your celebrations in an atmosphere of royal elegance.
+              Intimate spaces for your exclusive celebrations.
             </p>
           </div>
 
@@ -253,11 +263,9 @@ const BookingModal = ({ isOpen, onClose }) => {
               {[1, 2, 3].map((num) => (
                 <div key={num} className="flex-grow flex items-center gap-1">
                   <div
-                    className={`h-1.5 rounded-full flex-grow transition-all duration-300 ${step >= num ? 'bg-primary' : 'bg-outline-variant/20'
-                      }`}
+                    className={`h-1.5 rounded-full flex-grow transition-all duration-300 ${step >= num ? 'bg-primary' : 'bg-outline-variant/20'}`}
                   />
-                  <span className={`text-[10px] font-bold ${step >= num ? 'text-primary' : 'text-on-surface-variant/40'
-                    }`}>
+                  <span className={`text-[10px] font-bold ${step >= num ? 'text-primary' : 'text-on-surface-variant/40'}`}>
                     {num}
                   </span>
                 </div>
@@ -280,10 +288,10 @@ const BookingModal = ({ isOpen, onClose }) => {
 
                 <div className="space-y-2">
                   <h4 className="font-headline text-2xl text-white font-semibold">
-                    Booking Request Sent!
+                    Reservation Request Sent!
                   </h4>
                   <p className="text-sm text-on-surface-variant font-light leading-relaxed max-w-sm mx-auto">
-                    Thank you for choosing The Bagara Kitchen. Our premium events coordinator will reach out to you within 12 hours with details and custom menu templates.
+                    Thank you for choosing The Bagara Kitchen. Our premium coordinator will reach out to you shortly to finalize the details for your Private Dining experience.
                   </p>
                   {paymentInfo?.paidAdvance ? (
                     <div className="mt-4 p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-emerald-400 text-xs font-medium">
@@ -299,10 +307,10 @@ const BookingModal = ({ isOpen, onClose }) => {
 
                 <div className="bg-surface-low border border-outline-variant/30 rounded-xl p-4 text-left max-w-xs mx-auto text-xs space-y-2">
                   <p className="text-on-surface-variant"><strong className="text-white">Host Name:</strong> {formData.name}</p>
+                  <p className="text-on-surface-variant"><strong className="text-white">Room:</strong> {formData.room}</p>
                   <p className="text-on-surface-variant"><strong className="text-white">Date of Event:</strong> {formData.date}</p>
                   <p className="text-on-surface-variant"><strong className="text-white">Session Time:</strong> {formData.session}</p>
                   <p className="text-on-surface-variant"><strong className="text-white">Guests:</strong> {formData.guests} Guests</p>
-                  <p className="text-on-surface-variant"><strong className="text-white">Menu:</strong> {formData.catering}</p>
                 </div>
 
                 <button
@@ -330,10 +338,44 @@ const BookingModal = ({ isOpen, onClose }) => {
                       className="space-y-4"
                     >
                       <h4 className="text-sm font-semibold uppercase tracking-wider text-secondary flex items-center gap-2 mb-2">
-                        <Users size={16} /> Guest and Event details
+                        <DoorOpen size={16} /> Room & Event details
                       </h4>
 
                       <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1.5 col-span-2">
+                          <label className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Select Room</label>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div 
+                              onClick={() => setFormData(prev => ({ ...prev, room: 'Room 1' }))}
+                              className={`p-3 rounded-xl border-2 cursor-pointer transition-all duration-300 ${formData.room === 'Room 1' ? 'border-primary bg-primary/10' : 'border-outline-variant/40 bg-surface hover:border-primary/50'}`}
+                            >
+                              <p className="text-white font-bold text-sm">Room 1</p>
+                              <p className="text-xs text-on-surface-variant">Up to {pdrSettings?.room1?.capacity || 20} Guests</p>
+                            </div>
+                            <div 
+                              onClick={() => setFormData(prev => ({ ...prev, room: 'Room 2' }))}
+                              className={`p-3 rounded-xl border-2 cursor-pointer transition-all duration-300 ${formData.room === 'Room 2' ? 'border-primary bg-primary/10' : 'border-outline-variant/40 bg-surface hover:border-primary/50'}`}
+                            >
+                              <p className="text-white font-bold text-sm">Room 2</p>
+                              <p className="text-xs text-on-surface-variant">Up to {pdrSettings?.room2?.capacity || 40} Guests</p>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Guest Count</label>
+                          <input
+                            type="number"
+                            name="guests"
+                            required
+                            min="1"
+                            max={formData.room === 'Room 1' ? (pdrSettings?.room1?.capacity || 20) : (pdrSettings?.room2?.capacity || 40)}
+                            value={formData.guests}
+                            onChange={handleChange}
+                            className="w-full bg-background border border-outline-variant/60 rounded-xl py-3 px-4 text-sm text-white focus:outline-none focus:border-primary"
+                          />
+                        </div>
+
                         <div className="space-y-1.5">
                           <label className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Event Type</label>
                           <select
@@ -342,27 +384,11 @@ const BookingModal = ({ isOpen, onClose }) => {
                             onChange={handleChange}
                             className="w-full bg-background border border-outline-variant/60 rounded-xl py-3 px-4 text-sm text-white focus:outline-none focus:border-primary"
                           >
-                            <option>Corporate Gathering</option>
-                            <option>Wedding Reception</option>
-                            <option>Birthday Celebration</option>
-                            <option>Anniversary Dinner</option>
-                            <option>Bespoke Family Banquet</option>
+                            <option>Private Gathering</option>
+                            <option>Business Meeting</option>
+                            <option>Birthday</option>
+                            <option>Anniversary</option>
                             <option>Others</option>
-                          </select>
-                        </div>
-
-                        <div className="space-y-1.5">
-                          <label className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Guest Count</label>
-                          <select
-                            name="guests"
-                            value={formData.guests}
-                            onChange={handleChange}
-                            className="w-full bg-background border border-outline-variant/60 rounded-xl py-3 px-4 text-sm text-white focus:outline-none focus:border-primary"
-                          >
-                            <option value="50">Upto 50 Guests</option>
-                            <option value="100">50 - 100 Guests</option>
-                            <option value="150">100 - 200 Guests</option>
-                            <option value="200">200+ Guests</option>
                           </select>
                         </div>
 
@@ -381,11 +407,12 @@ const BookingModal = ({ isOpen, onClose }) => {
 
                         <div className="space-y-1.5 col-span-2 border-t border-outline-variant/10 pt-4 mt-2">
                           <label className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider block mb-2 text-center">Select Event Date</label>
-                          <BanquetDatePicker
+                          <PDRDatePicker
                             selectedDate={formData.date}
                             onChange={(date) => setFormData(prev => ({ ...prev, date }))}
-                            bookings={bookings}
+                            pdrBookings={pdrBookings}
                             selectedSession={formData.session}
+                            selectedRoom={formData.room}
                           />
                           {formData.date && (
                             <p className="text-xs text-primary font-bold mt-2 text-center">
@@ -468,7 +495,7 @@ const BookingModal = ({ isOpen, onClose }) => {
 
                       <div className="space-y-3.5">
                         <div className="space-y-1.5">
-                          <label className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Catering & Menu Option</label>
+                          <label className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Catering Options</label>
                           <select
                             name="catering"
                             value={formData.catering}
@@ -486,7 +513,7 @@ const BookingModal = ({ isOpen, onClose }) => {
                           <label className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Special Requests / Notes</label>
                           <textarea
                             name="notes"
-                            placeholder="Any diet restrictions, sound requirements, stage setups..."
+                            placeholder="Any diet restrictions, specific table arrangements..."
                             rows="3"
                             value={formData.notes}
                             onChange={handleChange}
@@ -520,20 +547,20 @@ const BookingModal = ({ isOpen, onClose }) => {
                         type="button"
                         onClick={(e) => handleSubmit(e, true)}
                         disabled={isSubmitting}
-                        className="flex items-center justify-center gap-2 bg-surface hover:bg-surface-high border border-outline-variant/30 text-white font-bold py-3 px-5 rounded-lg text-sm transition-all shadow-md"
+                        className={`flex items-center justify-center gap-2 bg-surface hover:bg-surface-high border border-outline-variant/30 text-white font-bold py-3 px-5 rounded-lg text-sm transition-all shadow-md ${!pdrPaymentEnabled ? 'hidden' : ''}`}
                       >
-                        {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Submit'}
+                        {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Submit Only'}
                       </button>
                       <button
                         type="button"
-                        onClick={(e) => handleSubmit(e, false)}
+                        onClick={(e) => handleSubmit(e, !pdrPaymentEnabled)}
                         disabled={isSubmitting}
                         className="flex items-center justify-center gap-2 bg-primary hover:bg-[#059669] disabled:bg-primary/50 text-white font-bold py-3 px-5 rounded-lg text-sm transition-all hover:scale-105 active:scale-95 shadow-md shadow-primary/20"
                       >
                         {isSubmitting ? (
                           <Loader2 className="w-4 h-4 animate-spin" />
                         ) : (
-                          `Pay ₹${advanceAmount} & Submit`
+                          pdrPaymentEnabled ? `Pay ₹${advanceAmount} & Submit` : 'Submit Booking'
                         )}
                       </button>
                     </div>
@@ -556,4 +583,4 @@ const BookingModal = ({ isOpen, onClose }) => {
   );
 };
 
-export default BookingModal;
+export default PDRBookingModal;

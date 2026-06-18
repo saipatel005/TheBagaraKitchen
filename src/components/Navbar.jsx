@@ -27,6 +27,7 @@ const Navbar = ({ onBookClick, onLoginClick, onDashboardClick }) => {
     { name: 'About Us', href: '#about' },
     { name: 'Menu', href: '#menu' },
     { name: 'Banquet Hall', href: '#banquet' },
+    { name: 'Private Dining', href: '#pdr' },
     { name: 'Contact', href: '#contact' },
   ];
 
@@ -52,7 +53,7 @@ const Navbar = ({ onBookClick, onLoginClick, onDashboardClick }) => {
             : 'bg-transparent border-transparent py-5'
         }`}
       >
-        <div className="max-w-7xl mx-auto px-5 sm:px-6 lg:px-8 flex justify-between items-center">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 flex justify-between items-center gap-4 xl:gap-16">
           {/* Logo */}
           <a 
             href="#home" 
@@ -61,7 +62,7 @@ const Navbar = ({ onBookClick, onLoginClick, onDashboardClick }) => {
           >
             <Logo className="w-14 h-14 min-[360px]:w-16 min-[360px]:h-16 sm:w-24 sm:h-24 md:w-32 md:h-32 flex-shrink-0" />
             <div className="flex flex-col text-left justify-center">
-              <span className="text-primary font-headline font-bold text-[12px] min-[360px]:text-[14px] sm:text-lg md:text-xl tracking-wider leading-none uppercase">
+              <span className="text-primary font-headline font-bold text-[12px] min-[360px]:text-[14px] sm:text-lg md:text-xl tracking-wider leading-none uppercase whitespace-nowrap">
                 THE BAGARA KITCHEN
               </span>
               <span className="text-secondary font-body text-[6px] min-[360px]:text-[7px] sm:text-[9px] md:text-[10px] tracking-[0.18em] font-semibold mt-1 sm:mt-1.5 leading-none uppercase">
@@ -71,13 +72,13 @@ const Navbar = ({ onBookClick, onLoginClick, onDashboardClick }) => {
           </a>
 
           {/* Desktop Nav Links */}
-          <div className="hidden md:flex items-center gap-4 lg:gap-8">
+          <div className="hidden md:flex items-center gap-2 lg:gap-4 xl:gap-8">
             {navLinks.map((link) => (
               <a
                 key={link.name}
                 href={link.href}
                 onClick={(e) => handleLinkClick(e, link.href)}
-                className="text-on-surface-variant hover:text-primary font-medium text-sm tracking-wide transition-colors duration-300 relative group py-1"
+                className="text-on-surface-variant hover:text-primary font-medium text-[10px] lg:text-[12px] xl:text-sm tracking-wide transition-colors duration-300 relative group py-1 whitespace-nowrap"
               >
                 {link.name}
                 <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full" />
@@ -89,7 +90,7 @@ const Navbar = ({ onBookClick, onLoginClick, onDashboardClick }) => {
               <a
                 href="#dashboard"
                 onClick={(e) => { e.preventDefault(); setIsOpen(false); onDashboardClick(); }}
-                className="text-primary hover:brightness-115 font-semibold text-sm tracking-wide transition-all relative group py-1 uppercase"
+                className="text-primary hover:brightness-115 font-semibold text-[10px] lg:text-[12px] xl:text-sm tracking-wide transition-all relative group py-1 uppercase whitespace-nowrap"
               >
                 Dashboard
                 <span className="absolute bottom-0 left-0 w-full h-0.5 bg-primary" />
@@ -98,7 +99,7 @@ const Navbar = ({ onBookClick, onLoginClick, onDashboardClick }) => {
               <a
                 href="#login"
                 onClick={(e) => { e.preventDefault(); setIsOpen(false); onLoginClick(); }}
-                className="text-on-surface-variant hover:text-primary font-medium text-sm tracking-wide transition-colors duration-300 relative group py-1"
+                className="text-on-surface-variant hover:text-primary font-medium text-[10px] lg:text-[12px] xl:text-sm tracking-wide transition-colors duration-300 relative group py-1 whitespace-nowrap"
               >
                 Staff Portal
                 <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full" />
@@ -107,7 +108,7 @@ const Navbar = ({ onBookClick, onLoginClick, onDashboardClick }) => {
             
             <button 
               onClick={onBookClick}
-              className="bg-primary hover:bg-primary-container text-white hover:text-on-primary-container font-semibold px-6 py-2.5 rounded-lg flex items-center gap-2 hover:scale-105 active:scale-95 transition-all shadow-md shadow-primary/20 duration-300"
+              className="bg-primary hover:bg-primary-container text-white hover:text-on-primary-container font-semibold px-3 py-1.5 lg:px-4 lg:py-2 xl:px-6 xl:py-2.5 text-[10px] lg:text-[12px] xl:text-sm rounded-lg flex items-center gap-1.5 lg:gap-2 hover:scale-105 active:scale-95 transition-all shadow-md shadow-primary/20 duration-300 whitespace-nowrap"
             >
               <Calendar size={16} />
               Book Now
@@ -190,6 +191,8 @@ const Navbar = ({ onBookClick, onLoginClick, onDashboardClick }) => {
           </>
         )}
       </AnimatePresence>
+
+
     </>
   );
 };

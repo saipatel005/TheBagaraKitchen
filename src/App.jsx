@@ -7,6 +7,7 @@ import Hero from './components/Hero';
 import About from './components/About';
 import Menu from './components/Menu';
 import Banquet from './components/Banquet';
+import PDR from './components/PDR';
 import Gallery from './components/Gallery';
 import Contact from './components/Contact';
 import Footer from './components/Footer';
@@ -101,6 +102,9 @@ const AppContent = () => {
 
       {/* Banquet space showcase & bookings */}
       <Banquet onOpenBooking={handleOpenBooking} />
+
+      {/* Private Dining Room section */}
+      <PDR />
 
       {/* Dynamic Gallery Grid Showcase */}
       <Gallery />

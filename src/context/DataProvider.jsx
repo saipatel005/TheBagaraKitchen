@@ -213,6 +213,11 @@ const DEFAULT_CLOUDINARY_SETTINGS = {
   uploadPreset: ''
 };
 
+const DEFAULT_PDR_SETTINGS = {
+  room1: { capacity: '20', price: '5000' },
+  room2: { capacity: '40', price: '8000' }
+};
+
 const DEFAULT_GALLERY_IMAGES = [
   { id: 'gal-1', title: 'Luxury Ochre Velvet Seating', image: 'https://images.unsplash.com/photo-1590846406792-0adc7f938f1d?q=80&w=600&auto=format&fit=crop', type: 'banquet hall', timestamp: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString() },
   { id: 'gal-2', title: 'Authentic Nizam Kitchen handis', image: 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?q=80&w=600&auto=format&fit=crop', type: 'food', timestamp: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString() },
@@ -224,6 +229,7 @@ export const DataProvider = ({ children }) => {
   const [contactInfo, setContactInfo] = useState({});
   const [cloudinarySettings, setCloudinarySettings] = useState({});
   const [bookings, setBookings] = useState([]);
+  const [pdrBookings, setPdrBookings] = useState([]);
   const [messages, setMessages] = useState([]);
   const [galleryImages, setGalleryImages] = useState([]);
   
@@ -238,6 +244,8 @@ export const DataProvider = ({ children }) => {
   const [managerBookingsEditingEnabled, setManagerBookingsEditingEnabled] = useState(true);
   
   const [advanceAmount, setAdvanceAmount] = useState('5000');
+  const [pdrSettings, setPdrSettings] = useState(DEFAULT_PDR_SETTINGS);
+  const [pdrPaymentEnabled, setPdrPaymentEnabled] = useState(true);
   
   const [isLoaded, setIsLoaded] = useState(false);
 
@@ -272,6 +280,13 @@ export const DataProvider = ({ children }) => {
             loadedBookings.push(doc.data());
           });
 
+          // B2. PDR Bookings
+          const pdrBookingsSnap = await getDocs(collection(db, 'pdrBookings'));
+          const loadedPdrBookings = [];
+          pdrBookingsSnap.forEach((doc) => {
+            loadedPdrBookings.push(doc.data());
+          });
+
           // C. Menu Items
           const menuItemsSnap = await getDocs(collection(db, 'menuItems'));
           const loadedMenuItems = [];
@@ -301,6 +316,8 @@ export const DataProvider = ({ children }) => {
               managerGalleryEditingEnabled: true,
               managerSettingsEditingEnabled: true,
               managerBookingsEditingEnabled: true,
+              pdrPaymentEnabled: true,
+              pdrSettings: dbData?.pdrSettings || DEFAULT_PDR_SETTINGS,
               messages: dbData?.messages || [
                 { id: 'm-1', name: 'Amit Verma', email: 'amit@example.com', message: 'Looking for a table booking of 12 guests this Saturday night around 9:00 PM. Do you offer parking?', timestamp: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString() }
               ]
@@ -329,6 +346,7 @@ export const DataProvider = ({ children }) => {
             setContactInfo(defaultSettings.contactInfo);
             setCloudinarySettings(defaultSettings.cloudinarySettings);
             setBookings(bookingsToSeed);
+            setPdrBookings([]); // Default empty for new setups
             setMessages(defaultSettings.messages);
             setGalleryImages(galleryToSeed);
             setRestaurantMenuImage(defaultSettings.restaurantMenuImage);
@@ -339,6 +357,8 @@ export const DataProvider = ({ children }) => {
             setManagerGalleryEditingEnabled(true);
             setManagerSettingsEditingEnabled(true);
             setManagerBookingsEditingEnabled(true);
+            setPdrSettings(defaultSettings.pdrSettings);
+            setPdrPaymentEnabled(true);
             setAdvanceAmount(defaultSettings.advanceAmount || '5000');
           } else {
             // Apply loaded values
@@ -346,6 +366,7 @@ export const DataProvider = ({ children }) => {
             setContactInfo(settings.contactInfo || DEFAULT_CONTACT_INFO);
             setCloudinarySettings(settings.cloudinarySettings || DEFAULT_CLOUDINARY_SETTINGS);
             setBookings(loadedBookings.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)));
+            setPdrBookings(loadedPdrBookings.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)));
             setMessages(settings.messages || []);
             setGalleryImages(loadedGallery.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)));
             setRestaurantMenuImage(settings.restaurantMenuImage || '');
@@ -356,6 +377,8 @@ export const DataProvider = ({ children }) => {
             setManagerGalleryEditingEnabled(settings.managerGalleryEditingEnabled !== undefined ? settings.managerGalleryEditingEnabled : true);
             setManagerSettingsEditingEnabled(settings.managerSettingsEditingEnabled !== undefined ? settings.managerSettingsEditingEnabled : true);
             setManagerBookingsEditingEnabled(settings.managerBookingsEditingEnabled !== undefined ? settings.managerBookingsEditingEnabled : true);
+            setPdrPaymentEnabled(settings.pdrPaymentEnabled !== undefined ? settings.pdrPaymentEnabled : true);
+            setPdrSettings(settings.pdrSettings || DEFAULT_PDR_SETTINGS);
             setAdvanceAmount(settings.advanceAmount !== undefined ? settings.advanceAmount : '5000');
           }
 
@@ -372,6 +395,7 @@ export const DataProvider = ({ children }) => {
         setContactInfo(dbData.contactInfo || {});
         setCloudinarySettings(dbData.cloudinarySettings || {});
         setBookings(dbData.bookings || []);
+        setPdrBookings(dbData.pdrBookings || []);
         setMessages(dbData.messages || []);
         setGalleryImages(dbData.galleryImages || []);
         setRestaurantMenuImage(dbData.restaurantMenuImage || '');
@@ -382,6 +406,8 @@ export const DataProvider = ({ children }) => {
         setManagerGalleryEditingEnabled(dbData.managerGalleryEditingEnabled !== undefined ? dbData.managerGalleryEditingEnabled : true);
         setManagerSettingsEditingEnabled(dbData.managerSettingsEditingEnabled !== undefined ? dbData.managerSettingsEditingEnabled : true);
         setManagerBookingsEditingEnabled(dbData.managerBookingsEditingEnabled !== undefined ? dbData.managerBookingsEditingEnabled : true);
+        setPdrPaymentEnabled(dbData.pdrPaymentEnabled !== undefined ? dbData.pdrPaymentEnabled : true);
+        setPdrSettings(dbData.pdrSettings || DEFAULT_PDR_SETTINGS);
         setAdvanceAmount(dbData.advanceAmount !== undefined ? dbData.advanceAmount : '5000');
         setIsLoaded(true);
         return;
@@ -407,6 +433,11 @@ export const DataProvider = ({ children }) => {
       if (savedBookings) finalBookings = JSON.parse(savedBookings);
       setBookings(finalBookings);
 
+      const savedPdrBookings = localStorage.getItem('tbk_pdr_bookings');
+      let finalPdrBookings = [];
+      if (savedPdrBookings) finalPdrBookings = JSON.parse(savedPdrBookings);
+      setPdrBookings(finalPdrBookings);
+
       const savedMessages = localStorage.getItem('tbk_messages');
       let finalMessages = [];
       if (savedMessages) finalMessages = JSON.parse(savedMessages);
@@ -427,6 +458,11 @@ export const DataProvider = ({ children }) => {
       setManagerSettingsEditingEnabled(localStorage.getItem('tbk_manager_settings_edit') !== null ? JSON.parse(localStorage.getItem('tbk_manager_settings_edit')) : true);
       setManagerBookingsEditingEnabled(localStorage.getItem('tbk_manager_bookings_edit') !== null ? JSON.parse(localStorage.getItem('tbk_manager_bookings_edit')) : true);
       
+      const savedPdr = localStorage.getItem('tbk_pdr_settings');
+      let finalPdr = DEFAULT_PDR_SETTINGS;
+      if (savedPdr) finalPdr = JSON.parse(savedPdr);
+      setPdrSettings(finalPdr);
+
       setAdvanceAmount(localStorage.getItem('tbk_advance_amount') || '5000');
 
       setIsLoaded(true);
@@ -449,6 +485,16 @@ export const DataProvider = ({ children }) => {
       setBookings(loadedBookings.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)));
     }, (err) => {
       console.error('Real-time bookings sync failed:', err);
+    });
+
+    const unsubscribePdrBookings = onSnapshot(collection(db, 'pdrBookings'), (snapshot) => {
+      const loadedPdrBookings = [];
+      snapshot.forEach((doc) => {
+        loadedPdrBookings.push(doc.data());
+      });
+      setPdrBookings(loadedPdrBookings.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)));
+    }, (err) => {
+      console.error('Real-time PDR bookings sync failed:', err);
     });
 
     const unsubscribeMenuItems = onSnapshot(collection(db, 'menuItems'), (snapshot) => {
@@ -485,6 +531,7 @@ export const DataProvider = ({ children }) => {
         setManagerGalleryEditingEnabled(settings.managerGalleryEditingEnabled !== undefined ? settings.managerGalleryEditingEnabled : true);
         setManagerSettingsEditingEnabled(settings.managerSettingsEditingEnabled !== undefined ? settings.managerSettingsEditingEnabled : true);
         setManagerBookingsEditingEnabled(settings.managerBookingsEditingEnabled !== undefined ? settings.managerBookingsEditingEnabled : true);
+        setPdrSettings(settings.pdrSettings || DEFAULT_PDR_SETTINGS);
       }
     }, (err) => {
       console.error('Real-time settings sync failed:', err);
@@ -492,6 +539,7 @@ export const DataProvider = ({ children }) => {
 
     return () => {
       unsubscribeBookings();
+      unsubscribePdrBookings();
       unsubscribeMenuItems();
       unsubscribeGallery();
       unsubscribeSettings();
@@ -513,6 +561,7 @@ export const DataProvider = ({ children }) => {
             contactInfo,
             cloudinarySettings,
             bookings,
+            pdrBookings,
             messages,
             galleryImages,
             restaurantMenuImage,
@@ -522,7 +571,8 @@ export const DataProvider = ({ children }) => {
             managerMenuEditingEnabled,
             managerGalleryEditingEnabled,
             managerSettingsEditingEnabled,
-            managerBookingsEditingEnabled
+            managerBookingsEditingEnabled,
+            pdrSettings
           })
         });
       } catch (e) {
@@ -532,7 +582,7 @@ export const DataProvider = ({ children }) => {
 
     const timer = setTimeout(syncStateToBackend, 300);
     return () => clearTimeout(timer);
-  }, [menuItems, contactInfo, cloudinarySettings, bookings, messages, galleryImages, restaurantMenuImage, banquetMenuImage, banquetVegMenuImage, banquetNonVegMenuImage, managerMenuEditingEnabled, managerGalleryEditingEnabled, managerSettingsEditingEnabled, managerBookingsEditingEnabled, isLoaded]);
+  }, [menuItems, contactInfo, cloudinarySettings, bookings, pdrBookings, messages, galleryImages, restaurantMenuImage, banquetMenuImage, banquetVegMenuImage, banquetNonVegMenuImage, managerMenuEditingEnabled, managerGalleryEditingEnabled, managerSettingsEditingEnabled, managerBookingsEditingEnabled, pdrSettings, isLoaded]);
 
   // Firestore Settings Helper
   const syncSettingsFieldToFirestore = async (fieldName, value) => {
@@ -727,6 +777,92 @@ export const DataProvider = ({ children }) => {
     setBookings(newBookings);
   };
 
+  // PDR Booking operations
+  const addPdrBooking = async (booking) => {
+    const bookingId = `pdr-b-${Date.now()}`;
+    const newBooking = { 
+      ...booking, 
+      id: bookingId, 
+      status: booking.status || 'Pending', 
+      timestamp: new Date().toISOString() 
+    };
+
+    if (isFirebaseConfigured && db) {
+      try {
+        await setDoc(doc(db, 'pdrBookings', bookingId), newBooking);
+      } catch (err) {
+        console.error('Failed to sync PDR booking to Firestore:', err);
+      }
+    }
+
+    const newBookings = [newBooking, ...pdrBookings];
+    localStorage.setItem('tbk_pdr_bookings', JSON.stringify(newBookings));
+    setPdrBookings(newBookings);
+  };
+
+  const updatePdrBookingStatus = async (id, status) => {
+    const targetBooking = pdrBookings.find(b => b.id === id);
+    if (status === 'Approved' && targetBooking) {
+      const targetSessionPrefix = (targetBooking.session || 'Lunch: 10:30 AM - 03:30 PM').substring(0, 5);
+      const targetRoom = targetBooking.room || 'Room 1';
+      
+      const hasConflict = pdrBookings.some(
+        (b) => b.id !== id && 
+               b.date === targetBooking.date && 
+               b.status === 'Approved' && 
+               (b.room || 'Room 1') === targetRoom &&
+               (b.session || 'Lunch: 10:30 AM - 03:30 PM').substring(0, 5) === targetSessionPrefix
+      );
+      if (hasConflict) {
+        alert(`Conflict Error: Date ${targetBooking.date} already has an approved reservation for ${targetRoom} during the ${targetSessionPrefix} session. You must cancel or reschedule the existing approved booking first.`);
+        return false;
+      }
+    }
+
+    const newBookings = pdrBookings.map(b => b.id === id ? { ...b, status } : b);
+
+    if (isFirebaseConfigured && db) {
+      try {
+        await updateDoc(doc(db, 'pdrBookings', id), { status });
+      } catch (err) {
+        console.error('Failed to sync PDR booking status to Firestore:', err);
+      }
+    }
+
+    localStorage.setItem('tbk_pdr_bookings', JSON.stringify(newBookings));
+    setPdrBookings(newBookings);
+
+    // Send Status Update Email via secure server-side SMTP
+    if (targetBooking && (status === 'Approved' || status === 'Rejected') && targetBooking.email && targetBooking.email !== 'offline@bagarakitchen.com') {
+      fetch('/api/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'booking_status',
+          status,
+          booking: { ...targetBooking, status, type: 'PDR' }
+        })
+      }).catch(err => console.error('Failed to dispatch status email:', err));
+    }
+
+    return true;
+  };
+
+  const deletePdrBooking = async (id) => {
+    const newBookings = pdrBookings.filter(b => b.id !== id);
+
+    if (isFirebaseConfigured && db) {
+      try {
+        await deleteDoc(doc(db, 'pdrBookings', id));
+      } catch (err) {
+        console.error('Failed to sync PDR booking deletion to Firestore:', err);
+      }
+    }
+
+    localStorage.setItem('tbk_pdr_bookings', JSON.stringify(newBookings));
+    setPdrBookings(newBookings);
+  };
+
   const addMessage = (msg) => {
     const newMessages = [
       { ...msg, id: `m-${Date.now()}`, status: 'Pending', timestamp: new Date().toISOString() },
@@ -820,6 +956,18 @@ export const DataProvider = ({ children }) => {
     setAdvanceAmount(amount);
     syncSettingsFieldToFirestore('advanceAmount', amount);
   };
+  const updatePdrSettings = (settings) => {
+    const newPdrSettings = { ...pdrSettings, ...settings };
+    localStorage.setItem('tbk_pdr_settings', JSON.stringify(newPdrSettings));
+    setPdrSettings(newPdrSettings);
+    syncSettingsFieldToFirestore('pdrSettings', newPdrSettings);
+  };
+
+  const updatePdrPaymentEnabled = (enabled) => {
+    localStorage.setItem('tbk_pdr_payment_enabled', JSON.stringify(enabled));
+    setPdrPaymentEnabled(enabled);
+    syncSettingsFieldToFirestore('pdrPaymentEnabled', enabled);
+  };
 
   return (
     <DataContext.Provider value={{
@@ -827,6 +975,7 @@ export const DataProvider = ({ children }) => {
       contactInfo,
       cloudinarySettings,
       bookings,
+      pdrBookings,
       messages,
       galleryImages,
       restaurantMenuImage,
@@ -837,7 +986,9 @@ export const DataProvider = ({ children }) => {
       managerGalleryEditingEnabled,
       managerSettingsEditingEnabled,
       managerBookingsEditingEnabled,
+      pdrPaymentEnabled,
       advanceAmount,
+      pdrSettings,
       isLoaded,
       addMenuItem,
       updateMenuItem,
@@ -851,6 +1002,9 @@ export const DataProvider = ({ children }) => {
       updateBookingStatus,
       updateBooking,
       deleteBooking,
+      addPdrBooking,
+      updatePdrBookingStatus,
+      deletePdrBooking,
       addMessage,
       deleteMessage,
       updateMessageStatus,
@@ -861,7 +1015,9 @@ export const DataProvider = ({ children }) => {
       updateManagerGalleryEditingEnabled,
       updateManagerSettingsEditingEnabled,
       updateManagerBookingsEditingEnabled,
-      updateAdvanceAmount
+      updatePdrPaymentEnabled,
+      updateAdvanceAmount,
+      updatePdrSettings
     }}>
       {children}
     </DataContext.Provider>

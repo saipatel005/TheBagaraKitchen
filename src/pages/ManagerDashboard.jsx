@@ -58,6 +58,9 @@ const ManagerDashboard = ({ onGoToPublic }) => {
     updateBookingStatus,
     updateBooking,
     deleteBooking,
+    pdrBookings,
+    updatePdrBookingStatus,
+    deletePdrBooking,
     addGalleryImage,
     deleteGalleryImage,
     managerMenuEditingEnabled,
@@ -336,7 +339,7 @@ const ManagerDashboard = ({ onGoToPublic }) => {
   };
 
   return (
-    <div className="min-h-screen bg-[#001b16] text-[#e2e2e2] flex flex-col lg:flex-row font-body overflow-x-hidden">
+    <div className="min-h-screen bg-[#001b16] text-[#e2e2e2] flex flex-col lg:flex-row font-body">
       
       {/* Mobile Top Header */}
       <header className="lg:hidden bg-surface-low border-b border-outline-variant/35 py-4 px-6 flex justify-between items-center shadow-lg sticky top-0 z-30">
@@ -406,6 +409,19 @@ const ManagerDashboard = ({ onGoToPublic }) => {
                 >
                   <CalendarDays size={18} />
                   Banquet Bookings
+                </button>
+
+                <button
+                  onClick={() => { setActiveTab('pdrBookings'); setIsEditing(false); setIsMobileMenuOpen(false); }}
+                  disabled={activeTab === 'pdrBookings'}
+                  className={`w-full flex items-center gap-3.5 py-3 px-4 rounded-xl text-sm font-semibold tracking-wide transition-all ${
+                    activeTab === 'pdrBookings'
+                      ? 'bg-primary text-white shadow-lg shadow-primary/10 cursor-default'
+                      : 'text-on-surface-variant hover:text-white hover:bg-surface cursor-pointer'
+                  }`}
+                >
+                  <CalendarDays size={18} />
+                  PDR Reservations
                 </button>
 
                 <button
@@ -489,10 +505,10 @@ const ManagerDashboard = ({ onGoToPublic }) => {
       </AnimatePresence>
 
       {/* SIDEBAR NAVIGATION PANEL (Requested Layout) */}
-      <aside className="hidden lg:flex lg:flex-col lg:w-72 bg-surface-low border-r lg:border-b-0 border-b border-outline-variant/30 justify-between flex-shrink-0 z-20">
-        <div className="p-6 space-y-8">
+      <aside className="hidden lg:flex lg:flex-col lg:w-72 bg-surface-low border-r lg:border-b-0 border-b border-outline-variant/30 flex-shrink-0 z-20 lg:sticky lg:top-0 lg:h-screen overflow-y-auto custom-scrollbar">
+        <div className="p-6 flex flex-col gap-8 flex-grow">
           
-          <div className="flex items-center gap-3 border-b border-outline-variant/20 pb-5">
+          <div className="flex items-center gap-3 border-b border-outline-variant/20 pb-5 flex-shrink-0">
             <Logo className="w-10 h-10 flex-shrink-0" />
             <div className="flex flex-col">
               <span className="text-white font-headline font-bold text-lg tracking-wider leading-none uppercase">
@@ -503,7 +519,7 @@ const ManagerDashboard = ({ onGoToPublic }) => {
           </div>
 
           {/* Requested Navigation List */}
-          <nav className="space-y-1.5">
+          <nav className="flex flex-col gap-1.5 flex-grow">
             <button
               onClick={() => { setActiveTab('dashboard'); setIsEditing(false); }}
               disabled={activeTab === 'dashboard'}
@@ -528,6 +544,19 @@ const ManagerDashboard = ({ onGoToPublic }) => {
             >
               <CalendarDays size={18} />
               Banquet Bookings
+            </button>
+
+            <button
+              onClick={() => { setActiveTab('pdrBookings'); setIsEditing(false); }}
+              disabled={activeTab === 'pdrBookings'}
+              className={`w-full flex items-center gap-3.5 py-3 px-4 rounded-xl text-sm font-semibold tracking-wide transition-all ${
+                activeTab === 'pdrBookings'
+                  ? 'bg-primary text-white shadow-lg shadow-primary/10 cursor-default'
+                  : 'text-on-surface-variant hover:text-white hover:bg-surface cursor-pointer'
+              }`}
+            >
+              <CalendarDays size={18} />
+              PDR Reservations
             </button>
 
             <button
@@ -582,27 +611,29 @@ const ManagerDashboard = ({ onGoToPublic }) => {
               Settings
             </button>
 
-            <button
-              onClick={onGoToPublic}
-              className="w-full flex items-center gap-3.5 py-3 px-4 rounded-xl text-sm font-semibold tracking-wide text-secondary hover:text-white hover:bg-surface-high/10 transition-all border border-secondary/30 hover:border-secondary mt-3 cursor-pointer duration-300"
-            >
-              <Store size={18} />
-              View Public Site
-            </button>
+            <div className="mt-auto flex flex-col pt-6">
+              <button
+                onClick={onGoToPublic}
+                className="w-full flex items-center gap-3.5 py-3 px-4 rounded-xl text-sm font-semibold tracking-wide text-secondary hover:text-white hover:bg-surface-high/10 transition-all border border-secondary/30 hover:border-secondary cursor-pointer duration-300"
+              >
+                <Store size={18} />
+                View Public Site
+              </button>
 
-            <button
-              onClick={logout}
-              className="w-full flex items-center gap-3.5 py-3 px-4 rounded-xl text-sm font-semibold tracking-wide text-on-surface-variant hover:text-red-400 hover:bg-red-950/15 transition-all mt-4 border-t border-outline-variant/10 pt-4"
-            >
-              <LogOut size={18} />
-              Logout
-            </button>
+              <button
+                onClick={logout}
+                className="w-full flex items-center gap-3.5 py-3 px-4 rounded-xl text-sm font-semibold tracking-wide text-on-surface-variant hover:text-red-400 hover:bg-red-950/15 transition-all mt-3 border-t border-outline-variant/10 pt-3"
+              >
+                <LogOut size={18} />
+                Logout
+              </button>
+            </div>
           </nav>
 
         </div>
 
         {/* Sidebar Footer Info */}
-        <div className="p-6 bg-background/30 border-t border-outline-variant/10 hidden lg:block text-xs font-light text-on-surface-variant/80">
+        <div className="p-6 bg-background/30 border-t border-outline-variant/10 hidden lg:block text-xs font-light text-on-surface-variant/80 flex-shrink-0">
           <p className="font-semibold text-white">Logged in as:</p>
           <p className="truncate mt-0.5">{user.name}</p>
           <p className="truncate text-[10px] opacity-75">{user.email}</p>
@@ -1055,6 +1086,221 @@ const ManagerDashboard = ({ onGoToPublic }) => {
           </div>
         )}
 
+        {activeTab === 'pdrBookings' && (
+          // TAB 2B: PDR Bookings Manager
+          <div className="bg-surface border border-outline-variant/35 rounded-2xl p-6 md:p-8 shadow-xl space-y-6">
+            <div className="border-b border-outline-variant/20 pb-4">
+              <h2 className="font-headline text-2xl text-white font-bold flex items-center gap-2">
+                <CalendarDays className="text-secondary" /> Private Dining Coordinator
+              </h2>
+              <p className="text-xs text-on-surface-variant font-light mt-1">Review exclusive PDR reservation requests and room assignments.</p>
+            </div>
+
+            {!managerBookingsEditingEnabled && (
+              <div className="p-4 bg-amber-950/40 border border-amber-500/55 text-amber-400 rounded-xl text-xs flex items-start gap-2.5 shadow-md shadow-amber-500/5 leading-relaxed">
+                <Info className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                <div className="space-y-0.5">
+                  <span className="font-semibold">Booking Controls Disabled</span>
+                  <p className="opacity-90">The Executive Administrator has locked event booking controls. You can review scheduling details, but status approvals and scheduling updates are read-only.</p>
+                </div>
+              </div>
+            )}
+
+            {/* Booking Filter Tabs */}
+            <div className="flex overflow-x-auto whitespace-nowrap scrollbar-hide border-b border-outline-variant/15 pb-px gap-2 mb-4">
+              {[
+                { id: 'upcoming', label: 'Upcoming Events', count: pdrBookings.filter(b => b.date >= todayString && b.status !== 'Completed' && b.status !== 'Rejected').length },
+                { id: 'history', label: 'Booking History', count: pdrBookings.filter(b => b.date < todayString || b.status === 'Completed' || b.status === 'Rejected').length },
+                { id: 'pending', label: 'Pending', count: pdrBookings.filter(b => b.status === 'Pending').length },
+                { id: 'approved', label: 'Approved', count: pdrBookings.filter(b => b.status === 'Approved').length },
+                { id: 'rejected', label: 'Rejected', count: pdrBookings.filter(b => b.status === 'Rejected').length }
+              ].map(tab => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setBookingFilter(tab.id)}
+                  className={`pb-3 pt-1 px-4 font-semibold text-xs tracking-wider uppercase border-b-2 transition-all relative cursor-pointer flex-shrink-0 ${
+                    bookingFilter === tab.id
+                      ? 'border-primary text-primary font-bold'
+                      : 'border-transparent text-on-surface-variant hover:text-white'
+                  }`}
+                >
+                  {tab.label} ({tab.count})
+                </button>
+              ))}
+            </div>
+
+            {(() => {
+              const filteredBookings = pdrBookings.filter((b) => {
+                switch (bookingFilter) {
+                  case 'upcoming':
+                    return b.date >= todayString && b.status !== 'Completed' && b.status !== 'Rejected';
+                  case 'history':
+                    return b.date < todayString || b.status === 'Completed' || b.status === 'Rejected';
+                  case 'pending':
+                    return b.status === 'Pending';
+                  case 'approved':
+                    return b.status === 'Approved';
+                  case 'rejected':
+                    return b.status === 'Rejected';
+                  default:
+                    return true;
+                }
+              });
+
+              return filteredBookings.length === 0 ? (
+                <div className="text-center py-16 text-on-surface-variant/60 font-light space-y-2 bg-surface-low/30 border border-outline-variant/10 rounded-xl">
+                  <Database className="w-10 h-10 mx-auto text-outline-variant/50 animate-pulse" />
+                  <p>No PDR reservations found for this category.</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {filteredBookings.map((booking) => (
+                    <div 
+                      key={booking.id}
+                      className="bg-surface-low border border-outline-variant/20 rounded-xl p-5 space-y-4 shadow-sm hover:border-outline-variant/40 transition-colors"
+                    >
+                      {/* Booking Card Header */}
+                      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 border-b border-outline-variant/10 pb-3">
+                        <div>
+                          <h3 className="text-base font-semibold text-white flex flex-wrap items-center gap-2">
+                            {booking.name} 
+                            <span className="text-[10px] text-on-surface-variant font-light bg-background border border-outline-variant/35 px-2 py-0.5 rounded-full font-sans tracking-normal">ID: {booking.id}</span>
+                            <span className="bg-secondary/20 border border-secondary/50 text-secondary font-bold text-[8px] uppercase tracking-wider px-2 py-0.5 rounded-md flex items-center gap-1">
+                              {booking.room || 'Room 1'}
+                            </span>
+                          </h3>
+                          <p className="text-xs text-on-surface-variant font-light mt-0.5 flex items-center gap-1.5 flex-wrap">
+                            <span>{booking.email}</span>
+                            <span className="text-outline-variant/40">|</span>
+                            <span className="flex items-center gap-1.5">
+                              {booking.phone}
+                              <a 
+                                href={`tel:${booking.phone}`} 
+                                title={`Call ${booking.name}`}
+                                className="inline-flex items-center justify-center p-1 rounded-md bg-primary/10 border border-primary/20 text-primary hover:bg-primary hover:text-white transition-all cursor-pointer"
+                              >
+                                <Phone size={10} />
+                              </a>
+                            </span>
+                          </p>
+                        </div>
+                        
+                        <div className="flex items-center gap-3">
+                          <span className={`text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full ${getStatusBadgeClass(booking.status)}`}>
+                            {booking.status}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Booking Details Grid */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3 text-xs font-light">
+                        <div className="space-y-1">
+                          <p className="text-on-surface-variant font-medium uppercase tracking-wider text-[10px]">Event Date</p>
+                          <p className="text-white font-medium">{booking.date}</p>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-on-surface-variant font-medium uppercase tracking-wider text-[10px]">Session Time</p>
+                          <p className="text-white font-medium">{booking.session || 'Lunch: 10:30 AM - 03:30 PM'}</p>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-on-surface-variant font-medium uppercase tracking-wider text-[10px]">Guest Count</p>
+                          <p className="text-white font-medium">{booking.guests} Guests</p>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-on-surface-variant font-medium uppercase tracking-wider text-[10px]">Event Type</p>
+                          <p className="text-white font-medium">{booking.eventType}</p>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-on-surface-variant font-medium uppercase tracking-wider text-[10px]">Catering</p>
+                          <p className="text-white font-medium">{booking.catering}</p>
+                        </div>
+                      </div>
+
+                      {booking.notes && (
+                        <div className="p-3 bg-background/50 rounded-lg border border-outline-variant/15 text-xs text-on-surface-variant font-light">
+                          <strong className="text-white font-medium">Special Requests:</strong> "{booking.notes}"
+                        </div>
+                      )}
+
+                      {/* Actions */}
+                      <div className="flex flex-col sm:flex-row flex-wrap sm:justify-end gap-2 sm:gap-3 border-t border-outline-variant/10 pt-3 w-full">
+                        {booking.status !== 'Approved' && (
+                          <button
+                            onClick={() => {
+                              if (!managerBookingsEditingEnabled) {
+                                alert('Action blocked: Operations Manager permissions are currently restricted to read-only.');
+                                return;
+                              }
+                              updatePdrBookingStatus(booking.id, 'Approved');
+                            }}
+                            disabled={!managerBookingsEditingEnabled}
+                            className="bg-emerald-950/40 border border-emerald-500/50 hover:bg-emerald-500 hover:text-white text-emerald-400 font-semibold px-3 py-1.5 rounded-lg text-[10px] flex items-center gap-1 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            <Check size={12} /> Approve Event
+                          </button>
+                        )}
+                        {booking.status !== 'Completed' && (
+                          <button
+                            onClick={() => {
+                              if (!managerBookingsEditingEnabled) return;
+                              updatePdrBookingStatus(booking.id, 'Completed');
+                            }}
+                            disabled={!managerBookingsEditingEnabled}
+                            className="bg-blue-950/40 border border-blue-500/55 hover:bg-blue-500 hover:text-white text-blue-400 font-semibold px-3 py-1.5 rounded-lg text-[10px] flex items-center gap-1 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            <Clock size={12} /> Mark Completed
+                          </button>
+                        )}
+                        {booking.status !== 'Pending' && (
+                          <button
+                            onClick={() => {
+                              if (!managerBookingsEditingEnabled) return;
+                              updatePdrBookingStatus(booking.id, 'Pending');
+                            }}
+                            disabled={!managerBookingsEditingEnabled}
+                            className="bg-amber-950/40 border border-primary/50 hover:bg-primary hover:text-white text-primary font-semibold px-3 py-1.5 rounded-lg text-[10px] flex items-center gap-1 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            <X size={12} /> Set Pending
+                          </button>
+                        )}
+                        {booking.status !== 'Rejected' && (
+                          <button
+                            onClick={() => {
+                              if (!managerBookingsEditingEnabled) return;
+                              updatePdrBookingStatus(booking.id, 'Rejected');
+                            }}
+                            disabled={!managerBookingsEditingEnabled}
+                            className="bg-red-950/40 border border-red-500/50 hover:bg-red-500 hover:text-white text-red-400 font-semibold px-3 py-1.5 rounded-lg text-[10px] flex items-center gap-1 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            <XCircle size={12} /> Reject Booking
+                          </button>
+                        )}
+                        <button
+                          onClick={() => {
+                            if (!managerBookingsEditingEnabled) {
+                              alert('Action blocked: Operations Manager permissions are currently restricted to read-only.');
+                              return;
+                            }
+                            if (window.confirm(`Are you sure you want to permanently delete "${booking.name}'s" PDR booking?`)) {
+                              deletePdrBooking(booking.id);
+                            }
+                          }}
+                          disabled={!managerBookingsEditingEnabled}
+                          className="bg-red-950/10 border border-red-500/30 hover:bg-red-500 hover:text-white text-red-400/90 font-semibold px-3 py-1.5 rounded-lg text-[10px] flex items-center gap-1 transition-all duration-300 sm:ml-auto ml-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <Trash2 size={12} /> Delete
+                        </button>
+                      </div>
+
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
+          </div>
+        )}
+
         {activeTab === 'gallery' && (
           // TAB 3: Gallery Management (Cloudinary Integrated)
           <div className="bg-surface border border-outline-variant/35 rounded-2xl p-6 md:p-8 shadow-xl space-y-6">
@@ -1094,6 +1340,7 @@ const ManagerDashboard = ({ onGoToPublic }) => {
                       >
                         <option value="restaurant">Restaurant Ambience</option>
                         <option value="banquet hall">Banquet Hall</option>
+                        <option value="pdr">Private Dining Room (PDR)</option>
                         <option value="food">Food & Drinks</option>
                         <option value="extra">Extra / Other</option>
                       </select>

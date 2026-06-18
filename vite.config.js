@@ -1,4 +1,5 @@
 import { defineConfig, loadEnv } from 'vite'
+// Trigger restart to load Razorpay keys
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import fs from 'fs'

@@ -46,20 +46,27 @@ export default async function handler(req, res) {
 
   try {
     if (type === 'new_booking') {
+      const isPdr = data.bookingType === 'PDR';
+      const systemAlertName = isPdr ? 'Private Dining System Alert' : 'Banquet System Alert';
+      const subjectPrefix = isPdr ? '🍽️ New PDR Booking Request' : '👑 New Banquet Booking Request';
+      const introText = isPdr 
+        ? 'An online guest has submitted a private dining room reservation. Below are the requested details:' 
+        : 'An online guest has submitted a banquet hall reservation. Below are the registered event details:';
+
       // 1. Mail to ADMIN (alerting about a new guest booking inquiry)
       const adminMailOptions = {
         from: `"TBK Control Center" <${smtpUser}>`,
         to: adminEmail,
-        subject: `👑 New Banquet Booking Request - ${data.name}`,
+        subject: `${subjectPrefix} - ${data.name}`,
         html: `
           <div style="background-color: #001b16; color: #e2e2e2; font-family: 'Inter', Arial, sans-serif; padding: 30px; border-radius: 12px; max-width: 600px; margin: 0 auto; border: 1px solid #c5a059;">
             <div style="text-align: center; border-bottom: 1px solid rgba(197, 160, 89, 0.3); padding-bottom: 20px; margin-bottom: 25px;">
               <h1 style="color: #c5a059; font-family: 'Playfair Display', serif; margin: 0; font-size: 24px; letter-spacing: 1px;">The Bagara Kitchen & Bar</h1>
-              <p style="color: #a8c7be; font-size: 11px; text-transform: uppercase; tracking-wider; margin: 5px 0 0 0;">Banquet System Alert</p>
+              <p style="color: #a8c7be; font-size: 11px; text-transform: uppercase; tracking-wider; margin: 5px 0 0 0;">${systemAlertName}</p>
             </div>
             
             <h2 style="color: #ffffff; font-size: 16px; font-weight: 600; margin-bottom: 15px;">New Booking Registered from Public Site</h2>
-            <p style="font-size: 13px; line-height: 1.6; color: #a8c7be; font-weight: 300;">An online guest has submitted a banquet hall reservation. Below are the registered event details:</p>
+            <p style="font-size: 13px; line-height: 1.6; color: #a8c7be; font-weight: 300;">${introText}</p>
             
             <table style="width: 100%; border-collapse: collapse; font-size: 13px; margin: 20px 0; font-weight: 300;">
               <tr style="border-bottom: 1px solid rgba(197, 160, 89, 0.15);">
@@ -86,6 +93,12 @@ export default async function handler(req, res) {
                 <td style="padding: 10px 0; color: #c5a059; font-weight: bold;">Expected Guests:</td>
                 <td style="padding: 10px 0; color: #ffffff;">${data.guests} Guests</td>
               </tr>
+              ${isPdr ? `
+              <tr style="border-bottom: 1px solid rgba(197, 160, 89, 0.15);">
+                <td style="padding: 10px 0; color: #c5a059; font-weight: bold;">Room Selected:</td>
+                <td style="padding: 10px 0; color: #ffffff;">${data.room}</td>
+              </tr>
+              ` : ''}
               <tr style="border-bottom: 1px solid rgba(197, 160, 89, 0.15);">
                 <td style="padding: 10px 0; color: #c5a059; font-weight: bold;">Event Type:</td>
                 <td style="padding: 10px 0; color: #ffffff;">${data.eventType}</td>
@@ -108,6 +121,11 @@ export default async function handler(req, res) {
       };
 
       // 2. Mail to GUEST (acknowledging receipt)
+      const guestSystemName = isPdr ? 'Private Dining Reservations' : 'Banquet Reservations';
+      const guestIntro = isPdr
+        ? 'Your Response has been received! Our premium dining coordinator will approach you shortly to discuss catering and confirm your PDR booking.'
+        : 'Your Response has been received! Our premium banquet coordination team will approach you shortly to discuss catering allocations, royal setup options, and confirm scheduling details.';
+
       const guestMailOptions = {
         from: `"The Bagara Kitchen & Bar" <${smtpUser}>`,
         to: data.email,
@@ -116,17 +134,18 @@ export default async function handler(req, res) {
           <div style="background-color: #001b16; color: #e2e2e2; font-family: 'Inter', Arial, sans-serif; padding: 30px; border-radius: 12px; max-width: 600px; margin: 0 auto; border: 1px solid #c5a059;">
             <div style="text-align: center; border-bottom: 1px solid rgba(197, 160, 89, 0.3); padding-bottom: 20px; margin-bottom: 25px;">
               <h1 style="color: #c5a059; font-family: 'Playfair Display', serif; margin: 0; font-size: 24px; letter-spacing: 1px;">The Bagara Kitchen & Bar</h1>
-              <p style="color: #a8c7be; font-size: 11px; text-transform: uppercase; tracking-wider; margin: 5px 0 0 0;">Banquet Reservations</p>
+              <p style="color: #a8c7be; font-size: 11px; text-transform: uppercase; tracking-wider; margin: 5px 0 0 0;">${guestSystemName}</p>
             </div>
             
             <p style="font-size: 14px; color: #ffffff; font-weight: 500;">Greetings ${data.name},</p>
-            <p style="font-size: 13px; line-height: 1.6; color: #a8c7be; font-weight: 300;">Your Response has been received! Our premium banquet coordination team will approach you shortly to discuss catering allocations, royal setup options, and confirm scheduling details.</p>
+            <p style="font-size: 13px; line-height: 1.6; color: #a8c7be; font-weight: 300;">${guestIntro}</p>
             
             <div style="background-color: #002d24; border: 1px solid rgba(197, 160, 89, 0.2); padding: 15px; border-radius: 8px; margin: 25px 0;">
               <h3 style="color: #c5a059; font-size: 12px; text-transform: uppercase; margin: 0 0 10px 0; tracking-wider;">Reservation Request Summary</h3>
               <p style="margin: 4px 0; font-size: 12px; color: #e2e2e2; font-weight: 300;"><strong>Event Date:</strong> ${data.date}</p>
               <p style="margin: 4px 0; font-size: 12px; color: #e2e2e2; font-weight: 300;"><strong>Session Time:</strong> ${data.session}</p>
               <p style="margin: 4px 0; font-size: 12px; color: #e2e2e2; font-weight: 300;"><strong>Guests:</strong> ${data.guests}</p>
+              ${isPdr ? `<p style="margin: 4px 0; font-size: 12px; color: #e2e2e2; font-weight: 300;"><strong>Room Selected:</strong> ${data.room}</p>` : ''}
               <p style="margin: 4px 0; font-size: 12px; color: #e2e2e2; font-weight: 300;"><strong>Catering Menu:</strong> ${data.catering}</p>
             </div>
 
@@ -157,24 +176,29 @@ export default async function handler(req, res) {
 
     if (type === 'booking_status') {
       const isApproved = status === 'Approved';
+      const isPdr = booking.type === 'PDR';
       const statusTitle = isApproved ? 'Approved & Confirmed' : 'Cancelled / Declined';
       const statusColor = isApproved ? '#10b981' : '#ef4444';
       const badgeBg = isApproved ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)';
+      
+      const guestSystemNameStatus = isPdr ? 'Private Dining Reservations' : 'Banquet Reservations';
+      const bookingTypeLabel = isPdr ? 'private dining room' : 'banquet hall';
+      const subjectPrefixStatus = isPdr ? '🍽️ PDR Booking Update' : '✨ Banquet Booking Update';
 
       const statusMailOptions = {
         from: `"The Bagara Kitchen & Bar" <${smtpUser}>`,
         to: booking.email,
-        subject: `✨ Banquet Booking Update: ${statusTitle} - The Bagara Kitchen & Bar`,
+        subject: `${subjectPrefixStatus}: ${statusTitle} - The Bagara Kitchen & Bar`,
         html: `
           <div style="background-color: #001b16; color: #e2e2e2; font-family: 'Inter', Arial, sans-serif; padding: 30px; border-radius: 12px; max-width: 600px; margin: 0 auto; border: 1px solid #c5a059;">
             <div style="text-align: center; border-bottom: 1px solid rgba(197, 160, 89, 0.3); padding-bottom: 20px; margin-bottom: 25px;">
               <h1 style="color: #c5a059; font-family: 'Playfair Display', serif; margin: 0; font-size: 24px; letter-spacing: 1px;">The Bagara Kitchen & Bar</h1>
-              <p style="color: #a8c7be; font-size: 11px; text-transform: uppercase; tracking-wider; margin: 5px 0 0 0;">Banquet Reservations</p>
+              <p style="color: #a8c7be; font-size: 11px; text-transform: uppercase; tracking-wider; margin: 5px 0 0 0;">${guestSystemNameStatus}</p>
             </div>
             
             <p style="font-size: 14px; color: #ffffff; font-weight: 500;">Greetings ${booking.name},</p>
             
-            <p style="font-size: 13px; line-height: 1.6; color: #a8c7be; font-weight: 300;">We are writing to provide you with an update regarding your recent banquet hall reservation request:</p>
+            <p style="font-size: 13px; line-height: 1.6; color: #a8c7be; font-weight: 300;">We are writing to provide you with an update regarding your recent ${bookingTypeLabel} reservation request:</p>
             
             <div style="text-align: center; background-color: ${badgeBg}; border: 1px solid ${statusColor}35; padding: 15px; border-radius: 10px; margin: 20px 0;">
               <span style="font-size: 16px; font-weight: 700; color: ${statusColor}; text-transform: uppercase; letter-spacing: 1px;">
@@ -187,6 +211,7 @@ export default async function handler(req, res) {
               <p style="margin: 4px 0; font-size: 12px; color: #e2e2e2; font-weight: 300;"><strong>Booking ID:</strong> ${booking.id}</p>
               <p style="margin: 4px 0; font-size: 12px; color: #e2e2e2; font-weight: 300;"><strong>Event Date:</strong> ${booking.date}</p>
               <p style="margin: 4px 0; font-size: 12px; color: #e2e2e2; font-weight: 300;"><strong>Guests:</strong> ${booking.guests}</p>
+              ${isPdr ? `<p style="margin: 4px 0; font-size: 12px; color: #e2e2e2; font-weight: 300;"><strong>Room:</strong> ${booking.room}</p>` : ''}
               <p style="margin: 4px 0; font-size: 12px; color: #e2e2e2; font-weight: 300;"><strong>Catering Selection:</strong> ${booking.catering}</p>
             </div>
 
@@ -197,10 +222,10 @@ export default async function handler(req, res) {
             </div>
 
             ${isApproved ? `
-              <p style="font-size: 13px; line-height: 1.6; color: #a8c7be; font-weight: 300;">Congratulations! Your event date has been **fully approved and locked** in our active system scheduler. We have reserved the hall and allocated premium kitchen chefs for your specific menu templates.</p>
-              <p style="font-size: 13px; line-height: 1.6; color: #a8c7be; font-weight: 300;">Our banquet coordinator will connect with you soon to discuss advance token payments and confirm stage/light themes.</p>
+              <p style="font-size: 13px; line-height: 1.6; color: #a8c7be; font-weight: 300;">Congratulations! Your event date has been **fully approved and locked** in our active system scheduler. We have reserved the space and allocated premium kitchen chefs for your specific menu templates.</p>
+              <p style="font-size: 13px; line-height: 1.6; color: #a8c7be; font-weight: 300;">Our coordinator will connect with you soon to discuss advance token payments and confirm setup details.</p>
             ` : `
-              <p style="font-size: 13px; line-height: 1.6; color: #a8c7be; font-weight: 300;">We regret to inform you that your banquet request has been **cancelled or declined** at this time due to high-occupancy conflicts on your selected date, or failure to align on details.</p>
+              <p style="font-size: 13px; line-height: 1.6; color: #a8c7be; font-weight: 300;">We regret to inform you that your request has been **cancelled or declined** at this time due to high-occupancy conflicts on your selected date, or failure to align on details.</p>
               <p style="font-size: 13px; line-height: 1.6; color: #a8c7be; font-weight: 300;">If you wish to reschedule or examine open booking dates, please connect with us at <strong>${adminEmail}</strong> or call our front desk directly.</p>
             `}
             
