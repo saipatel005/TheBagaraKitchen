@@ -1,9 +1,11 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { useData } from '../context/DataContext';
+import { useNavigate } from 'react-router-dom';
 
 const Hero = ({ onOrderClick }) => {
   const { contactInfo } = useData();
+  const navigate = useNavigate();
   return (
     <header
       id="home"
@@ -116,10 +118,10 @@ const Hero = ({ onOrderClick }) => {
 
               {/* Banquet Booking Navigation */}
               <a
-                href="#banquet"
+                href="/banquet"
                 onClick={(e) => {
                   e.preventDefault();
-                  document.querySelector('#banquet')?.scrollIntoView({ behavior: 'smooth' });
+                  navigate('/banquet');
                 }}
                 className="col-span-1 sm:w-auto border border-secondary text-secondary hover:bg-secondary/10 px-1 py-3.5 sm:px-10 sm:py-4.5 text-xs sm:text-base rounded-xl flex items-center justify-center gap-1 sm:gap-3 transition-all hover:scale-105 active:scale-95 font-bold duration-300"
               >

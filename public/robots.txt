@@ -1,0 +1,12 @@
+User-agent: *
+Allow: /
+Allow: /about
+Allow: /menu
+Allow: /banquet
+Allow: /pdr
+Allow: /gallery
+Allow: /contact
+Disallow: /login
+Disallow: /dashboard
+
+Sitemap: https://the-bagara-kitchen.vercel.app/sitemap.xml

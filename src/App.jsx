@@ -126,6 +126,7 @@ const DashboardRoute = () => {
 const AppContent = () => {
   const { isLoaded } = useData();
   const [isBookingOpen, setIsBookingOpen] = useState(false);
+  const navigate = useNavigate();
 
   const handleOpenBooking = () => {
     setIsBookingOpen(true);
@@ -136,14 +137,7 @@ const AppContent = () => {
   };
 
   const handleOrderClick = () => {
-    const menuElement = document.querySelector('#menu');
-    if (menuElement) {
-      const offsetTop = menuElement.offsetTop - 80;
-      window.scrollTo({
-        top: offsetTop,
-        behavior: 'smooth'
-      });
-    }
+    navigate('/menu');
   };
 
   // 1. Startup Dynamic Loader (Displays while DB API initializes)
