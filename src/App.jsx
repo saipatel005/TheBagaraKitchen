@@ -17,19 +17,81 @@ import AdminDashboard from './pages/AdminDashboard';
 import ManagerDashboard from './pages/ManagerDashboard';
 import Logo from './components/Logo';
 
-const AppContent = () => {
-  const { user } = useAuth();
-  const { isLoaded } = useData();
-  const [view, setView] = useState('public'); // 'public', 'login', 'dashboard'
-  const [isBookingOpen, setIsBookingOpen] = useState(false);
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 
-  useEffect(() => {
-    if (user) {
-      setView('dashboard');
-    } else {
-      setView('public');
-    }
-  }, [user]);
+const PublicView = ({ handleOpenBooking, handleCloseBooking, isBookingOpen, handleOrderClick }) => {
+  const navigate = useNavigate();
+  return (
+    <div className="bg-[#00251e] text-[#e2e2e2] min-h-screen selection:bg-primary selection:text-white overflow-x-hidden antialiased">
+      {/* Sticky Top Navigation */}
+      <Navbar 
+        onBookClick={handleOpenBooking} 
+        onLoginClick={() => navigate('/login')}
+        onDashboardClick={() => navigate('/dashboard')}
+      />
+
+      {/* Hero Header & Effervescent Particle Backdrop */}
+      <Hero onOrderClick={handleOrderClick} />
+
+      {/* About Nizami Heritage and Interior preview */}
+      <About />
+
+      {/* Interactive Menu Filtering explorer */}
+      <Menu />
+
+      {/* Banquet space showcase & bookings */}
+      <Banquet onOpenBooking={handleOpenBooking} />
+
+      {/* Private Dining Room section */}
+      <PDR />
+
+      {/* Dynamic Gallery Grid Showcase */}
+      <Gallery />
+
+      {/* Operations, Operating hours, and Inquiry Forms */}
+      <Contact />
+
+      {/* Footer Nav & Corporate copyrights */}
+      <Footer />
+
+      {/* Booking Form Modal */}
+      <BookingModal isOpen={isBookingOpen} onClose={handleCloseBooking} />
+    </div>
+  );
+};
+
+const LoginRoute = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
+  if (user) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return <Login onCancel={() => navigate('/')} />;
+};
+
+const DashboardRoute = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (user.role === 'admin') {
+    return <AdminDashboard onGoToPublic={() => navigate('/')} />;
+  }
+  if (user.role === 'manager') {
+    return <ManagerDashboard onGoToPublic={() => navigate('/')} />;
+  }
+
+  return <Navigate to="/" replace />;
+};
+
+const AppContent = () => {
+  const { isLoaded } = useData();
+  const [isBookingOpen, setIsBookingOpen] = useState(false);
 
   const handleOpenBooking = () => {
     setIsBookingOpen(true);
@@ -68,56 +130,23 @@ const AppContent = () => {
     );
   }
 
-  // 2. Main Role-Based Routing
-  if (user && view === 'dashboard') {
-    if (user.role === 'admin') {
-      return <AdminDashboard onGoToPublic={() => setView('public')} />;
-    }
-    if (user.role === 'manager') {
-      return <ManagerDashboard onGoToPublic={() => setView('public')} />;
-    }
-  }
-
-  if (view === 'login') {
-    return <Login onCancel={() => setView('public')} />;
-  }
-
   return (
-    <div className="bg-[#00251e] text-[#e2e2e2] min-h-screen selection:bg-primary selection:text-white overflow-x-hidden antialiased">
-      {/* Sticky Top Navigation */}
-      <Navbar 
-        onBookClick={handleOpenBooking} 
-        onLoginClick={() => setView('login')}
-        onDashboardClick={() => setView('dashboard')} // Return back to dashboard controls
+    <Routes>
+      <Route 
+        path="/" 
+        element={
+          <PublicView 
+            handleOpenBooking={handleOpenBooking} 
+            handleCloseBooking={handleCloseBooking} 
+            isBookingOpen={isBookingOpen} 
+            handleOrderClick={handleOrderClick} 
+          />
+        } 
       />
-
-      {/* Hero Header & Effervescent Particle Backdrop */}
-      <Hero onOrderClick={handleOrderClick} />
-
-      {/* About Nizami Heritage and Interior preview */}
-      <About />
-
-      {/* Interactive Menu Filtering explorer */}
-      <Menu />
-
-      {/* Banquet space showcase & bookings */}
-      <Banquet onOpenBooking={handleOpenBooking} />
-
-      {/* Private Dining Room section */}
-      <PDR />
-
-      {/* Dynamic Gallery Grid Showcase */}
-      <Gallery />
-
-      {/* Operations, Operating hours, and Inquiry Forms */}
-      <Contact />
-
-      {/* Footer Nav & Corporate copyrights */}
-      <Footer />
-
-      {/* Booking Form Modal */}
-      <BookingModal isOpen={isBookingOpen} onClose={handleCloseBooking} />
-    </div>
+      <Route path="/login" element={<LoginRoute />} />
+      <Route path="/dashboard" element={<DashboardRoute />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   );
 };
 
@@ -125,7 +154,9 @@ function App() {
   return (
     <AuthProvider>
       <DataProvider>
-        <AppContent />
+        <Router>
+          <AppContent />
+        </Router>
       </DataProvider>
     </AuthProvider>
   );
