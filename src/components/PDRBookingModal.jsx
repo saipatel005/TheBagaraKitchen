@@ -29,7 +29,7 @@ const PDRBookingModal = ({ isOpen, onClose }) => {
     guests: '15',
     room: 'Room 1',
     eventType: 'Private Gathering',
-    catering: 'Veg Silver',
+    catering: 'No Catering Required',
     notes: '',
     session: 'Lunch: 10:30 AM - 03:30 PM'
   });
@@ -490,25 +490,10 @@ const PDRBookingModal = ({ isOpen, onClose }) => {
                       className="space-y-4"
                     >
                       <h4 className="text-sm font-semibold uppercase tracking-wider text-secondary flex items-center gap-2 mb-2">
-                        <Calendar size={16} /> Catering & Special Notes
+                        <Calendar size={16} /> Special Requests & Notes
                       </h4>
 
                       <div className="space-y-3.5">
-                        <div className="space-y-1.5">
-                          <label className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Catering Options</label>
-                          <select
-                            name="catering"
-                            value={formData.catering}
-                            onChange={handleChange}
-                            className="w-full bg-background border border-outline-variant/60 rounded-xl py-3 px-4 text-sm text-white focus:outline-none focus:border-primary"
-                          >
-                            <option value="Veg Silver">Veg Silver</option>
-                            <option value="Veg Gold">Veg Gold</option>
-                            <option value="Non-Veg Silver">Non-Veg Silver</option>
-                            <option value="Non-Veg Gold">Non-Veg Gold</option>
-                          </select>
-                        </div>
-
                         <div className="space-y-1.5">
                           <label className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Special Requests / Notes</label>
                           <textarea
